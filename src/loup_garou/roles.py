@@ -45,6 +45,10 @@ class Role(BaseModel):
     description: str = ""
     ordre_nuit: int | None = None
     premiere_nuit_seulement: bool = False
+    nuit_max: int | None = Field(default=None, ge=1)
+    nuits_paires: bool = False
+    marqueurs: list[str] = Field(default_factory=list)
+    a_la_mort: str = ""
     cartes_supplementaires: int = Field(default=0, ge=0)
     conseils_mj: str = ""
 
@@ -57,6 +61,15 @@ class Role(BaseModel):
     @property
     def poids(self) -> float:
         return (self.poids_min + self.poids_max) / 2
+
+    def appele_la_nuit(self, numero: int) -> bool:
+        if self.ordre_nuit is None:
+            return False
+        if self.premiere_nuit_seulement and numero > 1:
+            return False
+        if self.nuit_max is not None and numero > self.nuit_max:
+            return False
+        return not (self.nuits_paires and numero % 2)
 
     @property
     def compte_comme_loup(self) -> bool:

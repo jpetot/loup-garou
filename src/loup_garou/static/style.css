@@ -52,3 +52,33 @@ article { border-top: 5px solid var(--camp-couleur, transparent); }
 .compo .quantite button { width: 2.2rem; padding: .2rem 0; margin: 0; }
 .compo .quantite span { min-width: 1.2rem; text-align: center; font-variant-numeric: tabular-nums; }
 .detail-score { font-size: .9rem; color: var(--pico-muted-color); }
+
+.contraintes { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: 1rem; }
+.puce { width: auto; padding: .2rem .6rem; margin: 0; font-size: .85rem; border-radius: 1rem; }
+.puce-impose { background: transparent; border: 1px solid var(--camp-village); color: var(--camp-village); }
+.puce-exclu { background: transparent; border: 1px solid var(--camp-loups); color: var(--camp-loups); }
+
+.phase { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.phase h1 { margin: 0; }
+.phase small { color: var(--pico-muted-color); }
+.phase button { width: auto; margin: 0; }
+.fin { font-size: 1.1rem; }
+.barre { text-decoration: line-through; opacity: .6; }
+.mort { opacity: .65; }
+
+.appels li { margin-bottom: .6rem; border-left: 4px solid var(--camp-couleur); padding-left: .5rem; }
+.appels label { display: inline; }
+.appels input[type=checkbox] { margin-right: .3rem; }
+.appels small { display: block; color: var(--pico-muted-color); }
+
+details.joueur { border-left: 4px solid var(--camp-couleur); padding: .3rem .6rem; margin-bottom: .5rem; background: var(--pico-card-background-color); border-radius: var(--pico-border-radius); }
+details.joueur summary { display: flex; justify-content: space-between; gap: .5rem; }
+details.joueur summary::after { display: none; }
+.actions-joueur { display: flex; flex-wrap: wrap; gap: .35rem; margin: .5rem 0; }
+.actions-joueur button { width: auto; margin: 0; padding: .25rem .55rem; font-size: .85rem; }
+.marqueur { background: transparent; border: 1px solid var(--pico-muted-border-color); color: var(--pico-color); }
+.marqueur.actif { background: var(--pico-primary-background); border-color: var(--pico-primary-background); color: var(--pico-primary-inverse); }
+
+.journal { list-style: none; padding: 0; }
+.journal li { list-style: none; padding: .2rem 0; border-bottom: 1px solid var(--pico-muted-border-color); }
+.journal small { color: var(--pico-muted-color); margin-right: .4rem; }

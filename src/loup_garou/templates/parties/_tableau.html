@@ -1,0 +1,108 @@
+{% set en_cours = partie.statut == "en_cours" %}
+<header class="phase phase-{{ partie.phase }}">
+  <div>
+    <h1>{% if partie.phase == "nuit" %}🌙 Nuit{% else %}☀️ Jour{% endif %} {{ partie.numero }}</h1>
+    <small>Partie n°{{ partie.id }} · {{ nb_vivants }} vivants dont {{ nb_loups_vivants }} loup{{ "s" if nb_loups_vivants > 1 }}</small>
+  </div>
+  {% if en_cours %}
+  <button hx-post="/parties/{{ partie.id }}/phase" hx-target="#tableau" class="contrast">
+    {% if partie.phase == "nuit" %}☀️ Passer au jour{% else %}🌙 Nuit {{ partie.numero + 1 }}{% endif %}
+  </button>
+  {% endif %}
+</header>
+
+{% if not en_cours %}
+<p class="fin">🏁 Partie terminée — victoire : <strong>{{ LIBELLES_GAGNANT.get(partie.gagnant, partie.gagnant) }}</strong></p>
+{% endif %}
+
+{% for message in rappels %}
+<p class="avertissement">⚠️ {{ message }}</p>
+{% endfor %}
+
+{% if partie.phase == "nuit" %}
+<section>
+  <h2>Ordre d'appel</h2>
+  <ol class="appels">
+    {% for appel in appels %}
+    <li class="camp-{{ appel.role.camp }}{% if appel.tous_morts %} mort{% endif %}">
+      <label>
+        <input type="checkbox">
+        <strong>{{ appel.titre }}</strong>
+        — {% for j in appel.joueurs %}<span class="{% if not j.vivant %}barre{% endif %}">{{ j.nom }}</span>{% if not loop.last %}, {% endif %}{% endfor %}
+      </label>
+      {% if appel.tous_morts %}<small>Mort : appelez quand même pour ne pas le révéler.</small>
+      {% elif appel.pouvoir_perdu %}<small>Pouvoir perdu : appelez pour la forme.</small>
+      {% elif appel.role.conseils_mj %}<small>{{ appel.role.conseils_mj }}</small>{% endif %}
+    </li>
+    {% else %}
+    <li>Personne n'est appelé cette nuit.</li>
+    {% endfor %}
+  </ol>
+</section>
+{% else %}
+<section>
+  <h2>Journée</h2>
+  <ul>
+    {% for j in muets %}<li>🤐 {{ j.nom }} ne peut pas parler aujourd'hui.</li>{% endfor %}
+    {% for j in marques %}<li>🐦 {{ j.nom }} a deux voix contre lui au vote.</li>{% endfor %}
+    <li>Vote : {{ nb_vivants }} joueurs vivants.</li>
+  </ul>
+</section>
+{% endif %}
+
+<section>
+  <h2>Joueurs</h2>
+  {% for j in joueurs %}
+  <details class="joueur camp-{{ j.role.camp }}{% if not j.vivant %} mort{% endif %}" id="joueur-{{ j.id }}">
+    <summary>
+      <span class="{% if not j.vivant %}barre{% endif %}"><strong>{{ j.nom }}</strong> · {{ j.role.nom }}</span>
+      <span class="marqueurs">{% for m in j.marqueurs %}{{ MARQUEURS_COMMUNS.get(m, "•") }}{% endfor %}{% if not j.vivant %} 💀{% endif %}</span>
+    </summary>
+    {% if en_cours %}
+    <div class="actions-joueur">
+      <button hx-post="/parties/{{ partie.id }}/joueurs/{{ j.id }}/vivant" hx-target="#tableau" class="{% if j.vivant %}secondary{% endif %} outline">
+        {% if j.vivant %}💀 Mort{% else %}↩️ Revient en jeu{% endif %}
+      </button>
+      {% for marqueur, emoji in MARQUEURS_COMMUNS.items() %}
+      <button hx-post="/parties/{{ partie.id }}/joueurs/{{ j.id }}/marqueur" hx-vals='{"marqueur": "{{ marqueur }}"}' hx-target="#tableau" class="marqueur {% if marqueur in j.marqueurs %}actif{% endif %}">{{ emoji }} {{ marqueur }}</button>
+      {% endfor %}
+      {% for marqueur in j.role.marqueurs %}
+      <button hx-post="/parties/{{ partie.id }}/joueurs/{{ j.id }}/marqueur" hx-vals='{"marqueur": "{{ marqueur }}"}' hx-target="#tableau" class="marqueur {% if marqueur in j.marqueurs %}actif{% endif %}">• {{ marqueur }}</button>
+      {% endfor %}
+    </div>
+    {% elif j.marqueurs %}
+    <p><small>{{ j.marqueurs | join(", ") }}</small></p>
+    {% endif %}
+    <textarea name="notes" placeholder="Notes du MJ" rows="2" hx-post="/parties/{{ partie.id }}/joueurs/{{ j.id }}/notes" hx-trigger="change, keyup changed delay:800ms" hx-swap="none">{{ j.participation.notes }}</textarea>
+  </details>
+  {% endfor %}
+</section>
+
+<section>
+  <h2>Journal</h2>
+  {% if en_cours %}
+  <form hx-post="/parties/{{ partie.id }}/journal" hx-target="#tableau" role="group">
+    <input name="texte" placeholder="Ajouter une note au journal…" autocomplete="off" aria-label="Note du journal">
+    <button type="submit">Noter</button>
+  </form>
+  {% endif %}
+  <ul class="journal">
+    {% for e in journal %}
+    <li><small>{{ e.phase }} {{ e.numero }}</small> {{ e.texte }}</li>
+    {% endfor %}
+  </ul>
+</section>
+
+{% if en_cours %}
+<section>
+  <h2>Fin de partie</h2>
+  <form hx-post="/parties/{{ partie.id }}/terminer" hx-target="#tableau" hx-confirm="Terminer la partie ?" role="group">
+    <select name="gagnant" aria-label="Camp gagnant">
+      {% for valeur, libelle in LIBELLES_GAGNANT.items() %}
+      <option value="{{ valeur }}">{{ libelle }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="secondary">🏁 Terminer</button>
+  </form>
+</section>
+{% endif %}

@@ -1,102 +1,61 @@
+import os
 import random
-from pathlib import Path
 from typing import Annotated
 
 from fastapi import FastAPI, Form, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 
+from loup_garou import routes_partie
 from loup_garou.composition import (
-    FAMILIARITE_MAX,
-    FAMILIARITE_MIN,
     JOUEURS_MAX,
     JOUEURS_MIN,
-    Composition,
-    Experience,
+    ROLES_DE_BASE,
+    Contraintes,
     Reglages,
-    composition_depuis_ids,
     generer,
 )
+from loup_garou.db import creer_moteur
 from loup_garou.roles import Camp, Niveau, catalogue_par_defaut
+from loup_garou.web import (
+    ICI,
+    ExperienceForm,
+    FamiliariteForm,
+    Joueurs,
+    ListeForm,
+    templates,
+)
 
-ICI = Path(__file__).parent
-templates = Jinja2Templates(directory=ICI / "templates")
-
-LIBELLES_CAMP = {
-    Camp.VILLAGE: "Village",
-    Camp.LOUPS: "Loups",
-    Camp.SOLITAIRE: "Solitaire",
-    Camp.AMBIGU: "Ambigu",
-}
-LIBELLES_NIVEAU = {
-    Niveau.CLASSIQUE: "Classique",
-    Niveau.AVANCE: "Avancé",
-    Niveau.EXPERT: "Expert",
-}
-LIBELLES_EXPERIENCE = {
-    Experience.DEBUTANT: "Débutants",
-    Experience.CONFIRME: "Confirmés",
-    Experience.EXPERT: "Experts",
-}
-LIBELLES_FAMILIARITE = {
-    -5: "Ne se sont jamais vus",
-    -2: "Se connaissent peu",
-    0: "La moitié se connaît",
-    2: "Se connaissent bien",
-    5: "Jouent souvent ensemble",
-}
-SEUIL_EQUILIBRE = 1.0
-templates.env.globals |= {
-    "LIBELLES_CAMP": LIBELLES_CAMP,
-    "LIBELLES_NIVEAU": LIBELLES_NIVEAU,
-    "LIBELLES_EXPERIENCE": LIBELLES_EXPERIENCE,
-    "LIBELLES_FAMILIARITE": LIBELLES_FAMILIARITE,
-    "SEUIL_EQUILIBRE": SEUIL_EQUILIBRE,
-}
-
-Joueurs = Annotated[int, Form(ge=JOUEURS_MIN, le=JOUEURS_MAX)]
-ExperienceForm = Annotated[Experience, Form()]
-FamiliariteForm = Annotated[int, Form(ge=FAMILIARITE_MIN, le=FAMILIARITE_MAX)]
+URL_BASE_PAR_DEFAUT = "sqlite:///loup-garou.db"
 
 
 def _vide_vers_none[T](valeur: str | None, type_: type[T]) -> T | None:
     return type_(valeur) if valeur else None
 
 
-def _rendre_resultat(
-    request: Request, reglages: Reglages, composition: Composition
-) -> HTMLResponse:
-    contexte = {
-        "reglages": reglages,
-        "composition": composition,
-        "avertissements": composition.avertissements(),
-        "tous_les_roles": catalogue_par_defaut().filtrer(),
-    }
-    return templates.TemplateResponse(request, "composer/_resultat.html", contexte)
-
-
-def _appliquer_action(ids: list[str], action: str, nouveau: str | None) -> list[str]:
-    catalogue = catalogue_par_defaut()
+def appliquer_action(contraintes: Contraintes, action: str, nouveau: str | None) -> Contraintes:
     operation, _, role_id = action.partition(":")
     if operation == "ajouter":
-        operation, role_id = "plus", nouveau or ""
-    role = catalogue.get(role_id)
-    if role is None:
-        return ids
-    resultat = list(ids)
-    if operation == "plus" and not (role.unique and role_id in resultat):
-        resultat.extend([role_id] * role.groupe)
-    elif operation == "moins":
-        for _ in range(role.groupe):
-            if role_id in resultat:
-                resultat.remove(role_id)
-    return resultat
+        operation, role_id = "imposer", nouveau or ""
+    if catalogue_par_defaut().get(role_id) is None:
+        return contraintes
+    match operation:
+        case "imposer":
+            return contraintes.imposer(role_id)
+        case "exclure":
+            return contraintes.exclure(role_id)
+        case "liberer":
+            return contraintes.liberer(role_id)
+    return contraintes
 
 
-def creer_app() -> FastAPI:
+def creer_app(url_base: str | None = None) -> FastAPI:
     app = FastAPI(title="Loup-Garou — assistant du MJ")
+    app.state.moteur = creer_moteur(
+        url_base or os.environ.get("LOUP_GAROU_DB", URL_BASE_PAR_DEFAUT)
+    )
     app.mount("/static", StaticFiles(directory=ICI / "static"), name="static")
+    app.include_router(routes_partie.routeur)
 
     @app.get("/")
     def accueil() -> RedirectResponse:
@@ -141,27 +100,28 @@ def creer_app() -> FastAPI:
         joueurs: Joueurs,
         experience: ExperienceForm,
         familiarite: FamiliariteForm,
-    ) -> HTMLResponse:
-        reglages = Reglages(joueurs, experience, familiarite)
-        composition = generer(catalogue_par_defaut(), reglages, graine=random.randrange(10**9))
-        return _rendre_resultat(request, reglages, composition)
-
-    @app.post("/composer/modifier", response_class=HTMLResponse)
-    def modifier_composition(
-        request: Request,
-        joueurs: Joueurs,
-        experience: ExperienceForm,
-        familiarite: FamiliariteForm,
-        action: Annotated[str, Form()],
-        roles: Annotated[list[str] | None, Form()] = None,
+        imposes: ListeForm = None,
+        exclus: ListeForm = None,
+        action: Annotated[str, Form()] = "",
         nouveau: Annotated[str | None, Form()] = None,
     ) -> HTMLResponse:
+        catalogue = catalogue_par_defaut()
         reglages = Reglages(joueurs, experience, familiarite)
-        ids = _appliquer_action(roles or [], action, nouveau)
-        composition = composition_depuis_ids(catalogue_par_defaut(), ids, reglages)
-        return _rendre_resultat(request, reglages, composition)
+        contraintes = appliquer_action(Contraintes.depuis(imposes, exclus), action, nouveau)
+        composition = generer(catalogue, reglages, random.randrange(10**9), contraintes)
+        contexte = {
+            "reglages": reglages,
+            "composition": composition,
+            "contraintes": contraintes,
+            "avertissements": composition.avertissements(),
+            "roles_a_ajouter": [
+                r
+                for r in catalogue.filtrer()
+                if r.id not in ROLES_DE_BASE | contraintes.imposes | set(composition.ids)
+            ],
+            "ROLES_DE_BASE": ROLES_DE_BASE,
+            "nom_du_role": lambda i: r.nom if (r := catalogue.get(i)) else i,
+        }
+        return templates.TemplateResponse(request, "composer/_resultat.html", contexte)
 
     return app
-
-
-app = creer_app()

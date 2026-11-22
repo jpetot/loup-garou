@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block titre %}Parties — Loup-Garou{% endblock %}
+{% block contenu %}
+<h1>Parties</h1>
+<p><a href="/composer" role="button">Nouvelle partie</a></p>
+{% for partie in parties %}
+<a class="carte" href="/parties/{{ partie.id }}">
+  <div class="carte-entete">
+    <strong>Partie n°{{ partie.id }}</strong>
+    <small>{{ partie.cree_le.strftime("%d/%m/%Y") }}</small>
+  </div>
+  <small>{{ partie.joueurs }} joueurs ·
+    {% if partie.statut == "preparation" %}en préparation
+    {% elif partie.statut == "en_cours" %}en cours ({{ partie.phase }} {{ partie.numero }})
+    {% else %}terminée, victoire : {{ LIBELLES_GAGNANT.get(partie.gagnant, partie.gagnant) }}{% endif %}
+  </small>
+</a>
+{% else %}
+<p>Aucune partie pour l'instant. Composez-en une pour la lancer.</p>
+{% endfor %}
+{% endblock %}

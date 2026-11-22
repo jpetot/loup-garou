@@ -5,7 +5,8 @@ import uvicorn
 
 def main() -> None:
     uvicorn.run(
-        "loup_garou.app:app",
+        "loup_garou.app:creer_app",
+        factory=True,
         host=os.environ.get("HOST", "127.0.0.1"),
         port=int(os.environ.get("PORT", "8000")),
         reload=os.environ.get("RELOAD", "1") == "1",

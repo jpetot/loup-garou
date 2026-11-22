@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block titre %}Préparer la partie — Loup-Garou{% endblock %}
+{% block contenu %}
+<h1>Préparer la partie</h1>
+<p class="detail-score">
+  Composition :
+  {% for role in roles_disponibles %}{{ role.nom }}{% if compte[role.id] > 1 %} ×{{ compte[role.id] }}{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}
+</p>
+{% if erreur %}<p class="avertissement">⚠️ {{ erreur }}</p>{% endif %}
+
+<form method="post" action="/parties/{{ partie.id }}/preparation">
+  <datalist id="noms-connus">
+    {% for nom in noms_connus %}<option value="{{ nom }}">{% endfor %}
+  </datalist>
+  <ol class="places">
+    {% for nom, role_id in places %}
+    <li>
+      <fieldset role="group">
+        <input name="noms" value="{{ nom }}" placeholder="Joueur {{ loop.index }}" list="noms-connus" autocomplete="off" aria-label="Nom du joueur {{ loop.index }}">
+        <select name="roles" aria-label="Rôle du joueur {{ loop.index }}">
+          <option value="">Rôle…</option>
+          {% for role in roles_disponibles %}
+          <option value="{{ role.id }}" {% if role.id == role_id %}selected{% endif %}>{{ role.nom }}</option>
+          {% endfor %}
+        </select>
+      </fieldset>
+    </li>
+    {% endfor %}
+  </ol>
+  <p><small>Saisissez les joueurs dans l'ordre où ils sont assis : certains rôles dépendent des voisins.</small></p>
+  <div class="grid">
+    <button type="submit" name="action" value="hasard" class="secondary">🎲 Distribuer au hasard</button>
+    <button type="submit" name="action" value="valider">▶️ Commencer</button>
+  </div>
+</form>
+{% endblock %}

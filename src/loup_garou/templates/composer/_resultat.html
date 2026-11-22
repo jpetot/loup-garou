@@ -1,9 +1,15 @@
 {% set ecart = composition.ecart %}
 <article>
-  <form hx-post="/composer/modifier" hx-target="#resultat">
+  <form hx-post="/composer/generer" hx-target="#resultat">
     <input type="hidden" name="joueurs" value="{{ reglages.joueurs }}">
     <input type="hidden" name="experience" value="{{ reglages.experience }}">
     <input type="hidden" name="familiarite" value="{{ reglages.familiarite }}">
+    {% for role_id in contraintes.imposes | sort %}
+    <input type="hidden" name="imposes" value="{{ role_id }}">
+    {% endfor %}
+    {% for role_id in contraintes.exclus | sort %}
+    <input type="hidden" name="exclus" value="{{ role_id }}">
+    {% endfor %}
     {% for role_id in composition.ids %}
     <input type="hidden" name="roles" value="{{ role_id }}">
     {% endfor %}
@@ -37,26 +43,43 @@
     <ul class="compo">
       {% for role, nombre in composition.decompte() %}
       <li class="camp-{{ role.camp }}">
-        <a href="/roles/{{ role.id }}" target="_blank">{{ role.nom }}</a>
+        <a href="/roles/{{ role.id }}" target="_blank">{% if role.id in contraintes.imposes %}📌 {% endif %}{{ role.nom }}{% if nombre > 1 %} ×{{ nombre }}{% endif %}</a>
         <span class="poids">{{ "%+g" | format(role.poids * nombre) }}</span>
         <span class="quantite">
-          <button type="submit" name="action" value="moins:{{ role.id }}" class="secondary outline" aria-label="Retirer {{ role.nom }}">−</button>
-          <span>{{ nombre }}</span>
-          <button type="submit" name="action" value="plus:{{ role.id }}" class="secondary outline" aria-label="Ajouter {{ role.nom }}" {% if role.unique %}disabled{% endif %}>+</button>
+          {% if role.id not in ROLES_DE_BASE %}
+          {% if role.id not in contraintes.imposes %}
+          <button type="submit" name="action" value="imposer:{{ role.id }}" class="secondary outline" title="Garder ce rôle" aria-label="Garder {{ role.nom }}">📌</button>
+          {% endif %}
+          <button type="submit" name="action" value="exclure:{{ role.id }}" class="secondary outline" title="Retirer ce rôle et recomposer" aria-label="Retirer {{ role.nom }}">−</button>
+          {% endif %}
         </span>
       </li>
       {% endfor %}
     </ul>
 
+    {% if contraintes.imposes or contraintes.exclus %}
+    <div class="contraintes">
+      {% for role_id in contraintes.imposes | sort %}
+      <button type="submit" name="action" value="liberer:{{ role_id }}" class="puce puce-impose" title="Ne plus imposer">📌 {{ nom_du_role(role_id) }} ✕</button>
+      {% endfor %}
+      {% for role_id in contraintes.exclus | sort %}
+      <button type="submit" name="action" value="liberer:{{ role_id }}" class="puce puce-exclu" title="Autoriser à nouveau">🚫 {{ nom_du_role(role_id) }} ✕</button>
+      {% endfor %}
+    </div>
+    {% endif %}
+
     <fieldset role="group">
-      <select name="nouveau" aria-label="Rôle à ajouter">
-        {% for role in tous_les_roles %}
+      <select name="nouveau" aria-label="Rôle à imposer">
+        {% for role in roles_a_ajouter %}
         <option value="{{ role.id }}">{{ role.nom }} ({{ "%+g" | format(role.poids) }})</option>
         {% endfor %}
       </select>
-      <button type="submit" name="action" value="ajouter">Ajouter</button>
+      <button type="submit" name="action" value="ajouter">Imposer</button>
     </fieldset>
 
-    <button type="button" class="secondary" hx-post="/composer/generer" hx-target="#resultat">🎲 Relancer</button>
+    <div class="grid">
+      <button type="submit" name="action" value="" class="secondary">🎲 Relancer</button>
+      <button type="button" hx-post="/parties" hx-target="body">▶️ Lancer la partie</button>
+    </div>
   </form>
 </article>

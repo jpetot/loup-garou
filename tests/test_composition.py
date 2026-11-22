@@ -1,6 +1,7 @@
 import pytest
 
 from loup_garou.composition import (
+    Contraintes,
     Experience,
     Reglages,
     camps_solo_autorises,
@@ -125,3 +126,21 @@ def test_les_experts_recoivent_des_roles_expert() -> None:
         for g in range(5)
     ]
     assert any(r.niveau == Niveau.EXPERT for c in compositions for r in c.cartes)
+
+
+def test_contraintes_imposer_exclure_liberer() -> None:
+    contraintes = Contraintes().imposer("sorciere").exclure("voyante").imposer("villageois")
+    assert contraintes == Contraintes(frozenset({"sorciere"}), frozenset({"voyante"}))
+    assert contraintes.exclure("sorciere").imposes == frozenset()
+    assert contraintes.liberer("voyante").exclus == frozenset()
+
+
+@pytest.mark.parametrize("graine", range(5))
+def test_generer_respecte_les_contraintes(graine: int) -> None:
+    contraintes = Contraintes(
+        imposes=frozenset({"loup-blanc", "colosse"}), exclus=frozenset({"voyante", "sorciere"})
+    )
+    composition = generer(CATALOGUE, Reglages(14, Experience.CONFIRME, 0), graine, contraintes)
+    assert {"loup-blanc", "colosse"} <= set(composition.ids)
+    assert not {"voyante", "sorciere"} & set(composition.ids)
+    assert len(composition.cartes) == 14

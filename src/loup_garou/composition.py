@@ -14,6 +14,7 @@ ID_LOUP = "loup-garou"
 ID_CUPIDON = "cupidon"
 ID_ANGE = "ange"
 ID_LOUP_BLANC = "loup-blanc"
+ROLES_DE_BASE = frozenset({ID_VILLAGEOIS, ID_LOUP})
 
 PENALITE_PAR_LOUP_SUPPLEMENTAIRE = -2
 PART_VILLAGE_MIN = 2 / 3
@@ -167,62 +168,103 @@ def _ordre_pondere(roles: list[Role], rng: random.Random) -> list[Role]:
     return sorted(roles, key=lambda r: rng.random() ** (1 / POIDS_TIRAGE[r.niveau]), reverse=True)
 
 
-def _tirer(
-    reglages: Reglages,
-    villageois: Role,
-    loup: Role,
-    loups_speciaux: list[Role],
-    essentiels: list[Role],
-    speciaux: list[Role],
-    rng: random.Random,
-) -> list[Role]:
-    joueurs = reglages.joueurs
-    n_loups = rng.randint(*plage_de_loups(joueurs))
-    cartes = [loup] * n_loups
-    if loups_speciaux and rng.random() < 0.4:
-        cartes[0] = rng.choice(loups_speciaux)
+@dataclass(frozen=True)
+class Contraintes:
+    imposes: frozenset[str] = frozenset()
+    exclus: frozenset[str] = frozenset()
+
+    @classmethod
+    def depuis(cls, imposes: list[str] | None, exclus: list[str] | None) -> Contraintes:
+        return cls(
+            frozenset(imposes or ()) - ROLES_DE_BASE, frozenset(exclus or ()) - ROLES_DE_BASE
+        )
+
+    def imposer(self, role_id: str) -> Contraintes:
+        if role_id in ROLES_DE_BASE:
+            return self
+        return Contraintes(self.imposes | {role_id}, self.exclus - {role_id})
+
+    def exclure(self, role_id: str) -> Contraintes:
+        if role_id in ROLES_DE_BASE:
+            return self
+        return Contraintes(self.imposes - {role_id}, self.exclus | {role_id})
+
+    def liberer(self, role_id: str) -> Contraintes:
+        return Contraintes(self.imposes - {role_id}, self.exclus - {role_id})
+
+
+@dataclass(frozen=True)
+class _Pioche:
+    reglages: Reglages
+    villageois: Role
+    loup: Role
+    imposes: tuple[Role, ...]
+    loups_speciaux: tuple[Role, ...]
+    speciaux: tuple[Role, ...]
+
+
+def _tirer(pioche: _Pioche, rng: random.Random) -> list[Role]:
+    joueurs = pioche.reglages.joueurs
+    cartes_imposees = [r for r in pioche.imposes for _ in range(r.groupe)]
+    loups_imposes = [r for r in cartes_imposees if r.camp == Camp.LOUPS]
+    autres_imposes = [r for r in cartes_imposees if r.camp != Camp.LOUPS]
+
+    n_loups = max(rng.randint(*plage_de_loups(joueurs)), len(loups_imposes))
+    cartes = loups_imposes + [pioche.loup] * (n_loups - len(loups_imposes))
+    if not loups_imposes and pioche.loups_speciaux and rng.random() < 0.4:
+        cartes[0] = rng.choice(pioche.loups_speciaux)
+    cartes.extend(autres_imposes)
 
     places = joueurs - n_loups
-    part = PART_ROLES_SPECIAUX[reglages.experience] + rng.uniform(-0.1, MARGE_PART_ROLES_SPECIAUX)
-    objectif = round(places * part)
-    objectif = min(max(0, objectif), places - n_loups)
-    pris = 0
-    for role in essentiels:
-        cartes.extend([role] * role.groupe)
-        pris += role.groupe
-    for role in _ordre_pondere(speciaux, rng):
+    part = PART_ROLES_SPECIAUX[pioche.reglages.experience] + rng.uniform(
+        -0.1, MARGE_PART_ROLES_SPECIAUX
+    )
+    pris = len(autres_imposes)
+    objectif = max(pris, min(round(places * part), places - n_loups))
+    for role in _ordre_pondere(list(pioche.speciaux), rng):
         if pris + role.groupe <= objectif:
             cartes.extend([role] * role.groupe)
             pris += role.groupe
-    cartes.extend([villageois] * (joueurs - len(cartes)))
+    cartes.extend([pioche.villageois] * max(0, joueurs - len(cartes)))
     return cartes
 
 
 def generer(
-    catalogue: Catalogue, reglages: Reglages, graine: int, essais: int = 600
+    catalogue: Catalogue,
+    reglages: Reglages,
+    graine: int,
+    contraintes: Contraintes = Contraintes(),
+    essais: int = 600,
 ) -> Composition:
     villageois = catalogue.get(ID_VILLAGEOIS)
     loup = catalogue.get(ID_LOUP)
     if villageois is None or loup is None:
         raise ValueError("Le catalogue doit contenir le simple villageois et le loup-garou")
 
+    imposes = [r for i in sorted(contraintes.imposes) if (r := catalogue.get(i)) is not None]
+    ids_imposes = {r.id for r in imposes}
     permis = [
         r
         for r in catalogue.filtrer()
         if r.cartes_supplementaires == 0
         and r.niveau in NIVEAUX_PERMIS[reglages.experience]
-        and r.id not in {ID_VILLAGEOIS, ID_LOUP}
+        and r.id not in ROLES_DE_BASE | contraintes.exclus | ids_imposes
     ]
-    loups_speciaux = [r for r in permis if r.camp == Camp.LOUPS]
-    essentiels = [r for r in permis if r.essentiel]
-    speciaux = [r for r in permis if r.camp != Camp.LOUPS and not r.essentiel]
+    imposes += [r for r in permis if r.essentiel]
+    pioche = _Pioche(
+        reglages=reglages,
+        villageois=villageois,
+        loup=loup,
+        imposes=tuple(imposes),
+        loups_speciaux=tuple(r for r in permis if r.camp == Camp.LOUPS),
+        speciaux=tuple(r for r in permis if r.camp != Camp.LOUPS and not r.essentiel),
+    )
 
     rng = random.Random(graine)
     meilleure: Composition | None = None
     meilleure_cle: tuple[int, float] | None = None
     for _ in range(essais):
-        cartes = _tirer(reglages, villageois, loup, loups_speciaux, essentiels, speciaux, rng)
-        candidate = Composition(cartes=tuple(cartes), reglages=reglages)
+        candidate = Composition(cartes=tuple(_tirer(pioche, rng)), reglages=reglages)
         cle = (len(candidate.avertissements()), abs(candidate.ecart))
         if meilleure_cle is None or cle < meilleure_cle:
             meilleure, meilleure_cle = candidate, cle
