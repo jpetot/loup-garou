@@ -501,7 +501,12 @@
   poids_min: 1
   poids_max: 2
   source: estimation
-  pouvoir: Chaque nuit, elle peut aller travailler chez un joueur. Si ce joueur meurt cette nuit-là, elle meurt avec lui. Si elle est elle-même visée la nuit (loups, sorcière ou autre), elle ne meurt pas.
-  description: Rôle maison du groupe.
+  pouvoir: Chaque nuit, elle choisit d'aller travailler chez un joueur ou de rester chez elle. Quand elle travaille, les attaques de la nuit contre elle (loups, sorcière ou autre) échouent, mais elle partage le sort de son client.
+  description: >-
+    Rôle maison du groupe.
+    Chez elle, elle est vulnérable comme tout le monde.
+    Si son client meurt pendant la nuit, quelle qu'en soit la cause, elle meurt avec lui.
+    Chez un loup, elle survit si le loup survit et meurt s'il meurt (par exemple tué par la sorcière).
+    Si son client meurt d'amour au matin, elle survit : elle avait fini de travailler.
   ordre_nuit: 16
-  conseils_mj: Notez chez qui elle passe la nuit avant le tour des loups.
+  conseils_mj: Notez chez qui elle passe la nuit avant le tour des loups. Au matin, vérifiez si son client est mort pendant la nuit avant d'annoncer les morts. Une mort par chagrin d'amour ne l'emporte pas.
