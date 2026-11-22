@@ -1,0 +1,507 @@
+# poids_min / poids_max : valeur du rôle en « unités villageois » (simple villageois = +1).
+# Positif : aide le village. Négatif : aide les loups ou un solitaire.
+# source : memo = mémo d'équilibrage de La Meute, site = lameuteloupgarou.fr/composition.html,
+# agrou = guide Steam pour Agrou (pouvoirs parfois différents), estimation = pas de source.
+# essentiel : toujours placé par le générateur (le MJ peut le retirer).
+# ordre_nuit : ordre d'appel du MJ (null = jamais appelé la nuit).
+
+- id: villageois
+  nom: Simple villageois
+  camp: village
+  extension: base
+  niveau: classique
+  unique: false
+  poids_min: 1
+  poids_max: 1
+  source: memo
+  pouvoir: Aucun pouvoir. Il vote le jour pour éliminer un suspect.
+  description: Son arme est la parole. Il doit débusquer les loups par la discussion.
+  ordre_nuit: null
+  conseils_mj: ""
+
+- id: villageois-villageois
+  nom: Villageois-villageois
+  camp: village
+  extension: personnages
+  niveau: classique
+  unique: true
+  poids_min: 4
+  poids_max: 4
+  source: memo, site
+  pouvoir: Aucun pouvoir, mais sa carte a deux faces villageoises. Tout le monde sait qu'il est innocent.
+  description: Il sert de point d'appui fiable au village dans les débats.
+  ordre_nuit: null
+  conseils_mj: Il joue carte visible dès le début de la partie.
+
+- id: loup-garou
+  nom: Loup-garou
+  camp: loups
+  extension: base
+  niveau: classique
+  unique: false
+  poids_min: -6
+  poids_max: -6
+  source: memo
+  pouvoir: Chaque nuit, les loups se réveillent ensemble et désignent une victime.
+  description: Le jour, il se fait passer pour un villageois. Il gagne quand tous les villageois sont morts.
+  ordre_nuit: 40
+  conseils_mj: Demandez un vote unanime. En cas de désaccord prolongé, fixez une limite de temps.
+
+- id: voyante
+  nom: Voyante
+  camp: village
+  extension: base
+  niveau: classique
+  unique: true
+  essentiel: true
+  poids_min: 9
+  poids_max: 9
+  source: memo
+  pouvoir: Chaque nuit, elle découvre la carte d'un joueur de son choix.
+  description: Rôle clé du village. Elle doit guider les votes sans se faire repérer par les loups.
+  ordre_nuit: 20
+  conseils_mj: Montrez la carte sans bruit et sans la retourner face à la table.
+
+- id: sorciere
+  nom: Sorcière
+  camp: village
+  extension: base
+  niveau: classique
+  unique: true
+  poids_min: 4
+  poids_max: 4
+  source: memo
+  pouvoir: Elle a une potion de vie (sauve la victime des loups) et une potion de mort (tue un joueur). Chaque potion sert une fois par partie.
+  description: Elle connaît la victime des loups chaque nuit tant qu'elle a sa potion de vie.
+  ordre_nuit: 50
+  conseils_mj: Notez les potions utilisées. Selon les règles du groupe, elle peut ou non se sauver elle-même.
+
+- id: chasseur
+  nom: Chasseur
+  camp: village
+  extension: base
+  niveau: classique
+  unique: true
+  poids_min: 2
+  poids_max: 4
+  source: memo, site
+  pouvoir: Quand il meurt, il élimine immédiatement un joueur de son choix.
+  description: Sa menace dissuade les loups de l'attaquer trop tôt.
+  ordre_nuit: null
+  conseils_mj: S'il est tué la nuit, il tire à l'annonce des morts du matin.
+
+- id: cupidon
+  nom: Cupidon
+  camp: village
+  extension: base
+  niveau: classique
+  unique: true
+  camp_solo: true
+  poids_min: -1
+  poids_max: 1
+  source: memo, site
+  pouvoir: La première nuit, il désigne deux amoureux. Si l'un meurt, l'autre meurt de chagrin.
+  description: Un couple loup-villageois forme un camp à part qui doit éliminer tous les autres joueurs.
+  ordre_nuit: 10
+  premiere_nuit_seulement: true
+  conseils_mj: Touchez les deux amoureux, puis réveillez-les pour qu'ils se reconnaissent.
+
+- id: petite-fille
+  nom: Petite fille
+  camp: village
+  extension: base
+  niveau: classique
+  unique: true
+  poids_min: 2
+  poids_max: 4
+  source: estimation
+  pouvoir: Elle peut entrouvrir les yeux pendant le tour des loups pour les espionner.
+  description: Si les loups la surprennent, elle risque de devenir leur victime à la place de leur cible.
+  ordre_nuit: null
+  conseils_mj: Restez attentif pendant le tour des loups. Les règles du groupe décident si les loups peuvent la changer de cible.
+
+- id: voleur
+  nom: Voleur
+  camp: ambigu
+  extension: base
+  niveau: classique
+  unique: true
+  poids_min: 0
+  poids_max: 0
+  source: estimation
+  pouvoir: La première nuit, il peut échanger sa carte avec une des deux cartes laissées au centre.
+  description: Ajoutez deux cartes au paquet. Si les deux sont des loups, il doit en prendre une.
+  ordre_nuit: 5
+  premiere_nuit_seulement: true
+  cartes_supplementaires: 2
+  conseils_mj: Prévoyez deux cartes en plus du nombre de joueurs.
+
+- id: salvateur
+  nom: Salvateur
+  camp: village
+  extension: nouvelle_lune
+  niveau: classique
+  unique: true
+  poids_min: 3
+  poids_max: 4
+  source: memo, site
+  pouvoir: Chaque nuit, il protège un joueur de l'attaque des loups. Il ne peut pas protéger le même joueur deux nuits de suite.
+  description: Il peut se protéger lui-même.
+  ordre_nuit: 15
+  conseils_mj: Notez le joueur protégé de la nuit précédente.
+
+- id: ancien
+  nom: Ancien
+  camp: village
+  extension: nouvelle_lune
+  niveau: classique
+  unique: true
+  poids_min: 3
+  poids_max: 3
+  source: memo
+  pouvoir: Il survit à la première attaque des loups. S'il est éliminé par le village, les villageois perdent leurs pouvoirs.
+  description: Il pousse le village à réfléchir avant de voter contre un joueur qui se dit Ancien.
+  ordre_nuit: null
+  conseils_mj: Notez sa vie supplémentaire.
+
+- id: idiot-du-village
+  nom: Idiot du village
+  camp: village
+  extension: nouvelle_lune
+  niveau: classique
+  unique: true
+  poids_min: 1
+  poids_max: 2
+  source: estimation
+  pouvoir: S'il est désigné par le vote du village, il révèle sa carte et reste en vie, mais il perd son droit de vote.
+  description: Il peut parler librement sans risquer le bûcher.
+  ordre_nuit: null
+  conseils_mj: ""
+
+- id: bouc-emissaire
+  nom: Bouc émissaire
+  camp: village
+  extension: nouvelle_lune
+  niveau: classique
+  unique: true
+  poids_min: 1
+  poids_max: 1
+  source: estimation
+  pouvoir: En cas d'égalité au vote, c'est lui qui est éliminé. Il choisit alors qui pourra voter au tour suivant.
+  description: ""
+  ordre_nuit: null
+  conseils_mj: ""
+
+- id: joueur-de-flute
+  nom: Joueur de flûte
+  camp: solitaire
+  extension: nouvelle_lune
+  niveau: avance
+  unique: true
+  poids_min: -1
+  poids_max: -1
+  source: memo
+  pouvoir: Chaque nuit, il charme deux joueurs. Il gagne quand tous les joueurs vivants sont charmés.
+  description: Les charmés se reconnaissent chaque nuit mais ne connaissent pas le joueur de flûte.
+  ordre_nuit: 60
+  conseils_mj: Tenez la liste des charmés.
+
+- id: corbeau
+  nom: Corbeau
+  camp: village
+  extension: personnages
+  niveau: avance
+  unique: true
+  poids_min: 2
+  poids_max: 2
+  source: agrou
+  pouvoir: Chaque nuit, il désigne un joueur qui aura deux voix contre lui au vote du lendemain.
+  description: ""
+  ordre_nuit: 55
+  conseils_mj: Annoncez le joueur marqué au réveil du village.
+
+- id: renard
+  nom: Renard
+  camp: village
+  extension: personnages
+  niveau: avance
+  unique: true
+  poids_min: 6
+  poids_max: 6
+  source: memo
+  pouvoir: La nuit, il désigne un groupe de trois joueurs voisins. Il apprend s'il y a au moins un loup parmi eux. S'il n'y en a aucun, il perd son pouvoir.
+  description: ""
+  ordre_nuit: 25
+  conseils_mj: ""
+
+- id: chevalier-epee-rouillee
+  nom: Chevalier à l'épée rouillée
+  camp: village
+  extension: personnages
+  niveau: avance
+  unique: true
+  poids_min: 2
+  poids_max: 3
+  source: estimation
+  pouvoir: S'il est dévoré par les loups, le premier loup à sa gauche meurt la nuit suivante.
+  description: ""
+  ordre_nuit: null
+  conseils_mj: Repérez le premier loup à sa gauche au moment de sa mort.
+
+- id: montreur-ours
+  nom: Montreur d'ours
+  camp: village
+  extension: personnages
+  niveau: avance
+  unique: true
+  poids_min: 2
+  poids_max: 3
+  source: estimation
+  pouvoir: Chaque matin, si un de ses voisins directs est un loup, le MJ fait grogner l'ours.
+  description: ""
+  ordre_nuit: null
+  conseils_mj: Les voisins morts sont ignorés. Prenez les vivants les plus proches.
+
+- id: servante-devouee
+  nom: Servante dévouée
+  camp: village
+  extension: personnages
+  niveau: avance
+  unique: true
+  poids_min: 0
+  poids_max: 1
+  source: estimation
+  pouvoir: Quand un joueur est éliminé par le vote, elle peut se révéler et prendre son rôle à la place.
+  description: ""
+  ordre_nuit: null
+  conseils_mj: ""
+
+- id: deux-soeurs
+  nom: Sœur
+  camp: village
+  extension: personnages
+  niveau: avance
+  unique: false
+  groupe: 2
+  poids_min: 3
+  poids_max: 3
+  source: memo
+  pouvoir: Les deux sœurs se connaissent et peuvent se concerter la nuit.
+  description: Se joue toujours par deux.
+  ordre_nuit: 30
+  conseils_mj: ""
+
+- id: trois-freres
+  nom: Frère
+  camp: village
+  extension: personnages
+  niveau: avance
+  unique: false
+  groupe: 3
+  poids_min: 4
+  poids_max: 4
+  source: memo
+  pouvoir: Les trois frères se connaissent et peuvent se concerter la nuit.
+  description: Se joue toujours par trois.
+  ordre_nuit: 31
+  conseils_mj: ""
+
+- id: enfant-sauvage
+  nom: Enfant sauvage
+  camp: ambigu
+  extension: personnages
+  niveau: avance
+  unique: true
+  poids_min: -1
+  poids_max: 1
+  source: estimation
+  pouvoir: La première nuit, il choisit un modèle. Si son modèle meurt, il devient loup-garou.
+  description: ""
+  ordre_nuit: 8
+  premiere_nuit_seulement: true
+  conseils_mj: Notez son modèle.
+
+- id: chien-loup
+  nom: Chien-loup
+  camp: ambigu
+  extension: personnages
+  niveau: avance
+  unique: true
+  poids_min: -1
+  poids_max: 1
+  source: estimation
+  pouvoir: La première nuit, il choisit de rester villageois ou de devenir loup-garou.
+  description: ""
+  ordre_nuit: 7
+  premiere_nuit_seulement: true
+  conseils_mj: ""
+
+- id: comedien
+  nom: Comédien
+  camp: village
+  extension: personnages
+  niveau: avance
+  unique: true
+  poids_min: 2
+  poids_max: 3
+  source: estimation
+  pouvoir: On place trois cartes de rôles villageois devant le MJ. Chaque nuit, il en utilise une, qui est ensuite retirée.
+  description: ""
+  ordre_nuit: 12
+  cartes_supplementaires: 3
+  conseils_mj: Choisissez des rôles sans effet de première nuit.
+
+- id: juge-begue
+  nom: Juge bègue
+  camp: village
+  extension: personnages
+  niveau: avance
+  unique: true
+  poids_min: 2
+  poids_max: 3
+  source: estimation
+  pouvoir: Une fois par partie, il peut provoquer un second vote immédiat après le premier.
+  description: ""
+  ordre_nuit: null
+  conseils_mj: Convenez d'un signe discret avec lui la première nuit.
+
+- id: ange
+  nom: Ange
+  camp: solitaire
+  extension: personnages
+  niveau: avance
+  unique: true
+  poids_min: -1
+  poids_max: -1
+  source: agrou
+  pouvoir: Il gagne seul s'il est éliminé au premier vote du village. Sinon, il devient simple villageois.
+  description: ""
+  ordre_nuit: null
+  conseils_mj: Avec l'Ange, la partie commence par un vote de jour.
+
+- id: abominable-sectaire
+  nom: Abominable sectaire
+  camp: solitaire
+  extension: personnages
+  niveau: avance
+  unique: true
+  poids_min: -8
+  poids_max: -6
+  source: estimation
+  pouvoir: Le MJ divise le village en deux groupes. Il gagne quand tous les membres du groupe adverse sont morts.
+  description: ""
+  ordre_nuit: null
+  conseils_mj: Annoncez les deux groupes au début de la partie.
+
+- id: loup-blanc
+  nom: Loup-garou blanc
+  camp: solitaire
+  extension: nouvelle_lune
+  niveau: avance
+  unique: true
+  est_loup: true
+  poids_min: 0
+  poids_max: 0
+  source: memo
+  pouvoir: Il chasse avec les loups. Une nuit sur deux, il peut tuer seul un loup-garou. Il gagne s'il est le dernier survivant.
+  description: ""
+  ordre_nuit: 45
+  conseils_mj: Appelez-le seulement les nuits paires.
+
+- id: infect-pere-des-loups
+  nom: Infect père des loups
+  camp: loups
+  extension: personnages
+  niveau: avance
+  unique: true
+  poids_min: -10
+  poids_max: -10
+  source: memo, site
+  pouvoir: Une fois par partie, il transforme la victime des loups en loup-garou au lieu de la tuer.
+  description: La victime garde ses pouvoirs mais joue désormais pour les loups.
+  ordre_nuit: 42
+  conseils_mj: Prévenez la victime en la touchant, puis réveillez-la avec les loups les nuits suivantes.
+
+- id: grand-mechant-loup
+  nom: Grand méchant loup
+  camp: loups
+  extension: personnages
+  niveau: avance
+  unique: true
+  poids_min: -10
+  poids_max: -10
+  source: memo
+  pouvoir: Tant qu'aucun loup n'est mort, il tue une victime de plus chaque nuit.
+  description: ""
+  ordre_nuit: 44
+  conseils_mj: ""
+
+- id: mere-des-loups
+  nom: Puissante mère des loups
+  camp: loups
+  extension: interlude
+  niveau: expert
+  unique: true
+  poids_min: -11
+  poids_max: -9
+  source: estimation
+  pouvoir: Elle choisit la victime avec la meute. Les deux premières nuits, elle se réveille une seconde fois et désigne un joueur. Si ce joueur a un pouvoir, il le perd définitivement et devient simple villageois.
+  description: Le MJ continue d'appeler l'ancien rôle du joueur neutralisé, pour que personne ne le découvre.
+  ordre_nuit: 43
+  conseils_mj: Seulement les deux premières nuits. Notez le joueur neutralisé et continuez d'appeler son rôle comme si de rien n'était.
+
+- id: singe-savant
+  nom: Singe savant
+  camp: village
+  extension: interlude
+  niveau: expert
+  unique: true
+  poids_min: 3
+  poids_max: 5
+  source: estimation
+  pouvoir: Une fois dans la partie, il consulte successivement autant de cartes qu'il le souhaite. Il peut s'arrêter à tout moment, mais s'il retourne la carte d'un loup-garou, il est éliminé immédiatement.
+  description: ""
+  ordre_nuit: 21
+  conseils_mj: Appelez-le chaque nuit tant qu'il n'a pas utilisé son pouvoir. Montrez les cartes une par une.
+
+- id: colosse
+  nom: Colosse
+  camp: village
+  extension: interlude
+  niveau: expert
+  unique: true
+  poids_min: 3
+  poids_max: 4
+  source: estimation
+  pouvoir: S'il est dévoré par les loups, il se réveille avant de mourir, découvre ses assaillants et choisit l'un des loups-garous pour l'emporter avec lui.
+  description: ""
+  ordre_nuit: null
+  conseils_mj: Quand les loups le désignent, réveillez-le après leur tour pour qu'il voie la meute et désigne un loup.
+
+- id: marionnettiste
+  nom: Marionnettiste
+  camp: village
+  extension: interlude
+  niveau: expert
+  unique: true
+  poids_min: 2
+  poids_max: 3
+  source: estimation
+  pouvoir: Il a une seconde vie. Si les loups le désignent, sa marionnette meurt à sa place. Il reste en jeu mais ne peut plus prononcer un mot et communique uniquement par gestes.
+  description: ""
+  ordre_nuit: null
+  conseils_mj: Notez sa seconde vie. Au matin, annoncez qu'il a survécu et qu'il est désormais muet.
+
+- id: travailleuse-du-sexe
+  nom: Travailleuse du sexe
+  camp: village
+  extension: maison
+  niveau: expert
+  unique: true
+  poids_min: 1
+  poids_max: 2
+  source: estimation
+  pouvoir: Chaque nuit, elle peut aller travailler chez un joueur. Si ce joueur meurt cette nuit-là, elle meurt avec lui. Si elle est elle-même visée la nuit (loups, sorcière ou autre), elle ne meurt pas.
+  description: Rôle maison du groupe.
+  ordre_nuit: 16
+  conseils_mj: Notez chez qui elle passe la nuit avant le tour des loups.

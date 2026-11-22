@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titre %}Loup-Garou{% endblock %}</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2.0.6/css/pico.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
+  <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
+</head>
+<body>
+  <header class="container">
+    <nav>
+      <ul><li><strong>🐺 Loup-Garou</strong></li></ul>
+      <ul>
+        <li><a href="/composer">Composer</a></li>
+        <li><a href="/roles">Rôles</a></li>
+        <li><a href="/nuit">Nuit</a></li>
+      </ul>
+    </nav>
+  </header>
+  <main class="container">
+    {% block contenu %}{% endblock %}
+  </main>
+</body>
+</html>

@@ -1,0 +1,62 @@
+{% set ecart = composition.ecart %}
+<article>
+  <form hx-post="/composer/modifier" hx-target="#resultat">
+    <input type="hidden" name="joueurs" value="{{ reglages.joueurs }}">
+    <input type="hidden" name="experience" value="{{ reglages.experience }}">
+    <input type="hidden" name="familiarite" value="{{ reglages.familiarite }}">
+    {% for role_id in composition.ids %}
+    <input type="hidden" name="roles" value="{{ role_id }}">
+    {% endfor %}
+
+    <header class="bilan">
+      <div>
+        <strong>{{ composition.cartes | length }} cartes</strong>
+        <small>{{ LIBELLES_EXPERIENCE[reglages.experience] }} · {{ LIBELLES_FAMILIARITE.get(reglages.familiarite, reglages.familiarite) | string | lower }}</small>
+      </div>
+      {% if ecart > SEUIL_EQUILIBRE %}
+      <span class="jauge camp-village">Avantage village {{ "%+g" | format(ecart) }}</span>
+      {% elif ecart < -SEUIL_EQUILIBRE %}
+      <span class="jauge camp-loups">Avantage loups {{ "%+g" | format(ecart) }}</span>
+      {% else %}
+      <span class="jauge">Équilibré {{ "%+g" | format(ecart) }}</span>
+      {% endif %}
+    </header>
+
+    <p class="detail-score">
+      Rôles {{ "%+g" | format(composition.poids_des_roles) }}
+      · meute {{ "%+g" | format(composition.penalite_meute) }}
+      · familiarité {{ "%+d" | format(reglages.familiarite) }}
+      = <strong>{{ "%+g" | format(composition.score) }}</strong>
+      (cible {{ "%+g" | format(reglages.cible) }})
+    </p>
+
+    {% for message in avertissements %}
+    <p class="avertissement">⚠️ {{ message }}</p>
+    {% endfor %}
+
+    <ul class="compo">
+      {% for role, nombre in composition.decompte() %}
+      <li class="camp-{{ role.camp }}">
+        <a href="/roles/{{ role.id }}" target="_blank">{{ role.nom }}</a>
+        <span class="poids">{{ "%+g" | format(role.poids * nombre) }}</span>
+        <span class="quantite">
+          <button type="submit" name="action" value="moins:{{ role.id }}" class="secondary outline" aria-label="Retirer {{ role.nom }}">−</button>
+          <span>{{ nombre }}</span>
+          <button type="submit" name="action" value="plus:{{ role.id }}" class="secondary outline" aria-label="Ajouter {{ role.nom }}" {% if role.unique %}disabled{% endif %}>+</button>
+        </span>
+      </li>
+      {% endfor %}
+    </ul>
+
+    <fieldset role="group">
+      <select name="nouveau" aria-label="Rôle à ajouter">
+        {% for role in tous_les_roles %}
+        <option value="{{ role.id }}">{{ role.nom }} ({{ "%+g" | format(role.poids) }})</option>
+        {% endfor %}
+      </select>
+      <button type="submit" name="action" value="ajouter">Ajouter</button>
+    </fieldset>
+
+    <button type="button" class="secondary" hx-post="/composer/generer" hx-target="#resultat">🎲 Relancer</button>
+  </form>
+</article>

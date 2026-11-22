@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block titre %}Ordre de la nuit — Loup-Garou{% endblock %}
+{% block contenu %}
+<h1>Ordre d'appel de la nuit</h1>
+<ol class="nuit">
+  {% for role in roles %}
+  <li class="camp-{{ role.camp }}">
+    <a href="/roles/{{ role.id }}"><strong>{{ role.nom }}</strong></a>
+    {% if role.premiere_nuit_seulement %}<mark>1re nuit</mark>{% endif %}
+    {% if role.conseils_mj %}<br><small>{{ role.conseils_mj }}</small>{% endif %}
+  </li>
+  {% endfor %}
+</ol>
+{% endblock %}
